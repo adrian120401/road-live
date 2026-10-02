@@ -21,19 +21,34 @@ Con las dependencias y los modelos instalados, ejecutar en PowerShell desde el p
 
 Instalar la interfaz con `pip install -r requirements-desktop.txt` usando el Python del entorno.
 Se abre una ventana **9:16**, con recorte central y el HUD original. **C** permite elegir
-cámara antes de iniciar. Esperar ubicación nativa de Windows con precisión ≤25 m y
-antigüedad ≤5 s y pulsar **Iniciar recorrido**, abajo. **Esc** o **F** finaliza y muestra
+cámara antes de iniciar. El modo automático prueba Windows durante 8 s; si la posición
+no alcanza precisión ≤25 m y antigüedad ≤5 s, prueba el iPhone durante 10 s. Si tampoco
+hay una posición válida, habilita una **ruta simulada de Trinidad**, como en los videos.
+Pulsar **Iniciar recorrido**, abajo. **Esc** o **F** finaliza y muestra
 el mapa interactivo en la misma ventana. **Nuevo recorrido** vuelve a la cámara.
+**G** permite elegir Automático, Sin GPS, Solo Windows o Solo iPhone antes de iniciar.
+**P** muestra la conexión del iPhone. Para iniciar directamente sin GPS:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.live --device auto --no-gps
+```
+
+Camo sigue proporcionando la imagen del iPhone por USB. No se encontró una interfaz
+documentada de Camo para consultar ubicación; el programa recibe posiciones del
+teléfono mediante **OwnTracks en modo HTTP**, por una red compartida. La preparación
+está en [docs/WINDOWS.md](docs/WINDOWS.md#ubicación-del-iphone-con-camo).
 
 Cada sesión guarda `recorrido.mp4` (**1080×1920, 30 FPS, sin audio**), `map.html`,
 `recorrido.json`, `recorrido_events.json` y fotos en `outputs/live/<fecha_id>/`.
 La grabación comienza con la primera imagen analizada; repite imágenes si la inferencia
 es más lenta para conservar la duración real. Los controles no aparecen en el MP4.
-Al perder ubicación válida se pausa el registro y la grabación; se reanudan al recuperarla.
+La fuente queda fija durante cada recorrido. Al perder ubicación real válida se pausa
+el registro y la grabación; se reanudan al recuperarla. Un recorrido simulado no espera GPS.
 Las evidencias incluyen su posición temporal en el clip (`video_timestamp`).
 
 La captura y la ubicación son nativas de Windows. Una laptop puede entregar ubicación
-por Wi-Fi/IP: si no alcanza los requisitos, no podrá iniciar. El fondo de calles requiere
+por Wi-Fi/IP: si no alcanza los requisitos, el modo automático prueba iPhone y simulación.
+El mapa y el JSON identifican cada recorrido simulado. El fondo de calles requiere
 internet; detección, ruta y evidencias se procesan localmente.
 `--output-root` cambia la carpeta de sesiones. `--road-roi LEFT TOP RIGHT BOTTOM` y
 `--no-road-area` ajustan la zona de detección a la cámara. Desconectar la cámara,

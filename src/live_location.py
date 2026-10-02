@@ -20,8 +20,9 @@ ROOT = Path(__file__).resolve().parents[1]
 class LocationFix:
     latitude: float
     longitude: float
-    accuracy_m: float
+    accuracy_m: float | None
     epoch: float
+    source: str = 'windows'
 
 
 class WindowsLocation:
@@ -126,6 +127,7 @@ class LiveRoute:
         self.accuracies: list[float] = []
         self.segment_starts: list[int] = []
         self.new_segment = True
+        self.sources: list[str] = []
 
     def append(self, timestamp: float, fix: LocationFix):
         if self.times and timestamp <= self.times[-1]:
@@ -136,6 +138,7 @@ class LiveRoute:
         self.samples.append(RoutePoint(timestamp, fix.latitude, fix.longitude))
         self.times.append(timestamp)
         self.accuracies.append(fix.accuracy_m)
+        self.sources.append(fix.source)
 
     def pause(self):
         self.new_segment = True
@@ -149,6 +152,10 @@ class LiveRoute:
     def accuracy_at(self, timestamp: float):
         self.point_at(timestamp)
         return self.accuracies[bisect_right(self.times, timestamp) - 1]
+
+    def source_at(self, timestamp: float):
+        self.point_at(timestamp)
+        return self.sources[bisect_right(self.times, timestamp) - 1]
 
     @property
     def segments(self):

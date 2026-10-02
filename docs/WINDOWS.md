@@ -55,13 +55,47 @@ Ejecutar Python de Windows; la ubicación nativa no está disponible con Python 
 ## 3. Hacer el recorrido
 
 1. La cámara se abre automáticamente. **C** abre un selector temporal para elegir otra.
-2. Esperar ubicación de Windows con **precisión ≤25 m** y antigüedad **≤5 s**. El inicio queda bloqueado sin una posición válida; no hay simulación automática.
+2. **G** elige el modo de ubicación. El modo **Automático** prueba Windows durante 8 s, luego iPhone durante 10 s y, si ambas fuentes fallan, habilita simulación. Las posiciones reales requieren **precisión ≤25 m** y antigüedad **≤5 s**. **Sin GPS** habilita el inicio inmediatamente y usa la ruta simulada de los videos.
 3. Pulsar **Iniciar recorrido**, abajo sobre la imagen. Se preparan los modelos y desaparece el botón: quedan únicamente la cámara, detecciones y el HUD original.
 4. Al perder ubicación válida aparece **Registro pausado**. La cámara sigue visible; no se agregan ruta, evidencias ni tiempo al MP4. Se reanuda automáticamente al recuperar ubicación.
 5. Pulsar **Esc** o **F** para finalizar, incluso durante una pausa. Esperar el guardado del MP4 y las evidencias. El mapa interactivo aparece en **la misma ventana**, con la ruta y los pozos confirmados.
 6. **Nuevo recorrido** vuelve a la cámara. **Esc** antes de iniciar cierra la aplicación. Para mover la ventana, arrastrar la parte superior de la imagen.
 
-Cambiar de cámara requiere finalizar el recorrido actual.
+Cambiar de cámara o fuente de ubicación requiere finalizar el recorrido actual.
+La fuente queda fija durante la sesión: perder GPS real pausa el registro; no cambia
+a simulación a mitad de un recorrido. El mapa y el JSON rotulan las rutas simuladas.
+
+Para iniciar directamente en modo sin GPS:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.live --device auto --no-gps
+```
+
+`--location windows` y `--location phone` exigen una posición real de la fuente elegida,
+sin fallback simulado. `--location auto` es el comportamiento por defecto.
+
+### Ubicación del iPhone con Camo
+
+La cámara de Camo se elige con **C**, igual que una webcam. El cable transmite la imagen;
+no se encontró una API documentada de Camo que exponga la ubicación del iPhone a Python.
+La ubicación usa un canal independiente mediante **OwnTracks para iOS**:
+
+1. Instalar [OwnTracks desde la App Store](https://apps.apple.com/us/app/owntracks/id692424691). En iOS, darle ubicación **Siempre** y **Ubicación precisa**, además de acceso a la red local si se solicita.
+2. Conectar iPhone y laptop a la misma Wi-Fi. También puede usarse **Compartir Internet del iPhone por USB**, si Windows reconoce el adaptador de red del teléfono. La conexión USB de Camo por sí sola no crea ese canal de red.
+3. Abrir la aplicación en Automático o Solo iPhone y pulsar **P** antes de iniciar. Copiar la URL de la interfaz de red compartida; no usar una dirección de VPN u otra red. El receptor escucha en el puerto 8766; `--phone-port 0` elige uno libre.
+4. En OwnTracks, elegir conexión **HTTP** e ingresar esa URL. No hace falta un broker MQTT ni un servidor externo. La URL incluye un identificador de emparejamiento y cambia al reiniciar la aplicación.
+5. Activar **Move mode**. Ajustar `locatorInterval` a **1 segundo** y `locatorDisplacement` a **1 metro** en los parámetros de OwnTracks. Los valores de fábrica (300 s / 100 m) no sirven para este recorrido.
+6. Enviar una ubicación manual para comprobar la conexión. Si Windows solicita acceso de Python a la red, permitir la red privada usada para el teléfono. La URL HTTP se usa en esa red compartida, sin publicar el receptor en internet.
+7. Volver a Camo en el iPhone y comprobar que OwnTracks siga enviando posiciones en segundo plano. El modo de ubicación de la laptop debe indicar **iPhone**. El sistema comprueba precisión y tiempo originales de cada mensaje; retrasos de iOS, señal insuficiente o falta de conexión producen pausa en un recorrido real.
+
+La recepción y el protocolo se verificaron con mensajes de prueba; la combinación
+OwnTracks en segundo plano + Camo debe comprobarse en el iPhone concreto. No se garantiza
+que iOS mantenga lecturas cada segundo. Si no cumple la precisión/frecuencia, usar Sin GPS.
+La ruta simulada se ajusta al tiempo registrado al finalizar y no representa posiciones reales.
+
+Referencias: [Camo por USB](https://camo.com/support/camo/camo-getting-started),
+[OwnTracks HTTP](https://owntracks.org/booklet/tech/http/) y
+[Move mode en iOS](https://owntracks.org/booklet/features/location/).
 
 ## 4. Resultados y ubicación
 
@@ -90,7 +124,7 @@ el mapa/resumen vacío y no genera MP4.
 La ubicación se consulta directamente al servicio de Windows, no al navegador.
 **Tener una laptop no implica tener GPS satelital.** Windows puede utilizar GPS, Wi-Fi
 o IP, y la posición puede ser demasiado imprecisa para iniciar. Si Windows devuelve
-±141 m, por ejemplo, el programa permanecerá esperando: requiere ±25 m o mejor.
+±141 m, por ejemplo, Solo Windows permanecerá esperando; Automático probará iPhone y luego simulación.
 Para mayor precisión se necesita un proveedor de ubicación adecuado, como GNSS reconocido
 por Windows. Un receptor USB que solo entrega datos por puerto serie no se integra automáticamente.
 

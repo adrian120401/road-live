@@ -17,6 +17,7 @@ from .analytics import Analytics
 from .config import Config, RoadDamageConfig
 from .live_location import LiveRoute
 from .live_video import LiveVideo, portrait_frame
+from .location import MockRouteLocationProvider
 from .map_renderer import render_map
 from .renderer import FrameMetrics, Renderer
 from .road_analytics import RoadAnalytics
@@ -73,7 +74,15 @@ class LiveSession:
         self.config.road_damage.validate()
         self.camera_name = str(camera_name)[:200]
         self.directory.mkdir(parents=True, exist_ok=False)
-        self.thread.start()
+        try:
+            if hasattr(self.location, 'begin_trip'):
+                self.location.begin_trip()
+            self.route.source = self.location.snapshot()[0]['source']
+            self.thread.start()
+        except Exception:
+            if hasattr(self.location, 'end_trip'):
+                self.location.end_trip()
+            raise
 
     def snapshot(self, heartbeat=False):
         gps, _ = self.location.snapshot()
@@ -260,6 +269,8 @@ class LiveSession:
                 self.reason = self.error or ('No se pudieron guardar todas las salidas.' if self.export_errors
                                              else 'Recorrido finalizado' if self.stop_reason == 'user_finished'
                                              else 'Recorrido parcial guardado')
+            if hasattr(self.location, 'end_trip'):
+                self.location.end_trip()
             self.done.set()
 
     def _export(self):
@@ -269,6 +280,13 @@ class LiveSession:
             except Exception as exc:
                 self.export_errors.append(f'Video: {exc}')
         complete = self.stop_reason == 'user_finished' and not self.error
+        if self.route.source == 'mock' and self.route.samples:
+            first, last = self.route.times[0], self.route.times[-1]
+            simulation = MockRouteLocationProvider(max(.001, last - first))
+            self.route.samples = [replace(point,
+                                          latitude=simulation.point_at(point.timestamp - first).latitude,
+                                          longitude=simulation.point_at(point.timestamp - first).longitude)
+                                  for point in self.route.samples]
         events_path = self.directory / 'recorrido_events.json'
         road_summary = {'potholes': 0, 'saved_evidence': 0}
         if self.road_analytics:
@@ -284,7 +302,7 @@ class LiveSession:
                 event['video_timestamp'] = round(position, 3) if position is not None else None
                 event['video_frame'] = int(position * self.video.fps) if position is not None else None
             point = self.route.point_at(event['timestamp'])
-            event.update(latitude=point.latitude, longitude=point.longitude, location_source='windows',
+            event.update(latitude=point.latitude, longitude=point.longitude, location_source=self.route.source_at(event['timestamp']),
                          location_accuracy_m=self.route.accuracy_at(event['timestamp']))
         road_summary.update(potholes=len(events), saved_evidence=sum(bool(e.get('evidence_path')) for e in events))
         # Preserve event metadata even when one evidence file cannot be saved.
@@ -292,7 +310,8 @@ class LiveSession:
                                           'unique_potholes': len(events), 'count_is_estimate': True,
                                           'confidence_threshold': self.config.road_damage.confidence,
                                           'events': events}, indent=2, ensure_ascii=False), encoding='utf-8')
-        location_report = {'source': 'windows', 'max_accuracy_m': self.location.max_accuracy,
+        location_report = {'source': self.route.source, 'simulated': self.route.source == 'mock',
+                           'max_accuracy_m': self.location.max_accuracy,
                            'max_age_seconds': self.location.max_age,
                            'trajectory': [asdict(p) for p in self.route.points],
                            'segments': [[asdict(p) for p in segment] for segment in self.route.segments]}

@@ -56,7 +56,7 @@ def evidence_preview(event: dict, events_path: Path, map_path: Path) -> str:
 
 
 def event_popup(event: dict, events_path: Path, map_path: Path) -> str:
-    source = {"mock": "Simulada (mock)", "windows": "Ubicación de Windows"}.get(event["location_source"], "GPS real")
+    source = {"mock": "Simulada (mock)", "windows": "Ubicación de Windows", "phone": "Ubicación del iPhone"}.get(event["location_source"], "GPS real")
     accuracy = event.get("location_accuracy_m")
     precision = f'<dt>Precisión</dt><dd>±{accuracy:.0f} m</dd>' if accuracy is not None else ''
     return (f'<h3>POZO · EVENTO #{int(event["event_id"])}</h3><dl>'
@@ -74,7 +74,7 @@ def render_map(provider: LocationProvider, events: list[dict], events_path: Path
     output.parent.mkdir(parents=True, exist_ok=True)
     valid = [e for e in events if e["confidence"] >= max(MIN_POTHOLE_CONFIDENCE, confidence)
              and e.get("latitude") is not None and e.get("longitude") is not None]
-    title = {"mock": "RUTA SIMULADA — TRINIDAD", "windows": "RECORRIDO · UBICACIÓN DE WINDOWS"}.get(provider.source, "RECORRIDO CON GPS REAL")
+    title = {"mock": "RUTA SIMULADA — TRINIDAD", "windows": "RECORRIDO · UBICACIÓN DE WINDOWS", "phone": "RECORRIDO · UBICACIÓN DEL IPHONE"}.get(provider.source, "RECORRIDO CON GPS REAL")
     segments = getattr(provider, 'segments', (provider.points,))
     data = {"route": [[p.latitude, p.longitude] for p in provider.points],
             "segments": [[[p.latitude, p.longitude] for p in segment] for segment in segments],
@@ -87,11 +87,11 @@ def render_map(provider: LocationProvider, events: list[dict], events_path: Path
     document = document.replace("__COUNT__", str(len(valid)))
     average = sum(e['confidence'] for e in valid) / len(valid) if valid else None
     document = document.replace("__AVERAGE__", f"{average:.0%}" if average is not None else "—")
-    document = document.replace("__SOURCE__", {"mock": "MOCK / SIMULADA", "windows": "WINDOWS"}.get(provider.source, "GPS REAL"))
+    document = document.replace("__SOURCE__", {"mock": "MOCK / SIMULADA", "windows": "WINDOWS", "phone": "IPHONE"}.get(provider.source, "GPS REAL"))
     duration = max(0, processed_seconds)
     document = document.replace("__DURATION__", f"{duration:.1f} s")
     distance = ""
-    if provider.source in {"real", "windows"}:
+    if provider.source in {"real", "windows", "phone"}:
         meters = 0.0
         pairs = (pair for segment in segments for pair in zip(segment, segment[1:]))
         for a, b in pairs:
@@ -102,7 +102,7 @@ def render_map(provider: LocationProvider, events: list[dict], events_path: Path
         label = "Recorrido GPS estimado" if provider.source == "real" else "Distancia registrada · estimada"
         distance = f"<span>{label}</span><strong>{meters / 1000:.2f} km</strong>"
     document = document.replace("__DISTANCE__", distance)
-    partial = 'Recorrido parcial' if provider.source == 'windows' else 'Prueba parcial'
+    partial = 'Recorrido parcial' if provider.source in {'windows', 'phone'} else 'Prueba parcial'
     document = document.replace("__STATUS__", "Recorrido completo" if complete else f"{partial} · {processed_seconds:.1f} s procesados")
     document = document.replace("__DISCLAIMER__", "Simulación para desarrollo. No representa las ubicaciones reales del video."
                                 if provider.source == "mock" else "Ubicación aproximada del vehículo al detectar el daño.")

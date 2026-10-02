@@ -8,7 +8,7 @@ import numpy as np
 from PySide6.QtCore import QTimer, Qt, QUrl
 from PySide6.QtGui import QImage, QKeySequence, QPainter, QShortcut, QTransform
 from PySide6.QtMultimedia import QCamera, QMediaCaptureSession, QMediaDevices, QVideoSink
-from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QPushButton, QWidget
+from PySide6.QtWidgets import QApplication, QInputDialog, QLabel, QPushButton, QWidget, QMessageBox
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 from scripts.open_map import create_server
@@ -84,7 +84,8 @@ class LiveWindow(QWidget):
         self.new_button.clicked.connect(self.new_trip)
         self.new_button.hide()
         self.shortcuts = []
-        for key, callback in [('Esc', self.finish_trip), ('F', lambda: self.finish_trip() if self.session else None), ('C', self.choose_camera)]:
+        for key, callback in [('Esc', self.finish_trip), ('F', lambda: self.finish_trip() if self.session else None),
+                              ('C', self.choose_camera), ('P', self.phone_settings), ('G', self.choose_location)]:
             shortcut = QShortcut(QKeySequence(key), self)
             shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
             shortcut.activated.connect(callback)
@@ -165,6 +166,39 @@ class LiveWindow(QWidget):
         if accepted:
             self.use_camera(devices[labels.index(selected)])
 
+    def choose_location(self):
+        if self.session or not hasattr(self.location, 'set_mode'):
+            return
+        labels = ['Automático: Windows → iPhone → simulación', 'Sin GPS: ruta simulada',
+                  'Solo Windows', 'Solo iPhone']
+        modes = ['auto', 'mock', 'windows', 'phone']
+        selected, accepted = QInputDialog.getItem(self, 'Ubicación del recorrido', 'Modo', labels,
+                                                  modes.index(self.location.mode), False)
+        if accepted:
+            self.location.set_mode(modes[labels.index(selected)])
+
+    def phone_settings(self):
+        phone = getattr(self.location, 'phone', None)
+        if self.session or phone is None:
+            return
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle('Ubicación del iPhone')
+        dialog.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        if phone.server is None:
+            text = phone.receiver_error or 'Seleccioná Automático o Solo iPhone con G para activar el receptor.'
+        else:
+            urls = phone.urls()
+            text = ('Camo transmite la cámara. OwnTracks transmite la ubicación.\n\n'
+                    '1. Instalá OwnTracks en el iPhone.\n'
+                    '2. Conexión HTTP: copiá la URL de la interfaz de red compartida.\n'
+                    '3. Ubicación Siempre + Precisa; modo Move, intervalo 1 s y desplazamiento 1 m.\n'
+                    '4. Usá la misma Wi-Fi o una red de Compartir Internet por USB.\n\n'
+                    + ('\n\n'.join(urls) if urls else 'No se encontró una dirección de red. Conectá Wi-Fi o Compartir Internet.')
+                    + '\n\nEl cable de Camo por sí solo no crea esta conexión de ubicación.\n'
+                    'La URL cambia al reiniciar. Si Windows pregunta por firewall, permití la red privada.')
+        dialog.setText(text)
+        dialog.exec()
+
     def on_video_frame(self, video_frame):
         if self.map_view or self.closing:
             return
@@ -239,8 +273,9 @@ class LiveWindow(QWidget):
             self.start_button.setEnabled(camera_ready and gps['valid'])
             self.status.show()
             accuracy = gps['accuracy_m']
-            detail = f'Ubicación de Windows · margen ±{accuracy:.0f} m\n' if accuracy is not None else 'Ubicación de Windows\n'
-            self.status.setText(self.start_error or ((detail + gps['reason'] if not gps['valid'] else 'C para elegir cámara · Esc para salir')
+            source = {'windows': 'Windows', 'phone': 'iPhone', 'mock': 'SIMULADA · sin GPS'}.get(gps['source'], gps['source'])
+            detail = f'Ubicación {source}' + (f' · margen ±{accuracy:.0f} m' if accuracy is not None else '') + '\n'
+            self.status.setText(self.start_error or ((detail + gps['reason'] if not gps['valid'] else f'{source}\nC: cámara · G: ubicación · P: iPhone')
                                 if camera_ready else self.camera_reason))
 
     def show_map(self):

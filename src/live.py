@@ -13,6 +13,7 @@ from threading import Lock
 from .config import RoadDamageConfig
 from .live_location import WindowsLocation
 from .live_session import LiveSession
+from .live_sources import AutomaticLocation, PhoneLocation
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -146,11 +147,16 @@ def main():
     parser = argparse.ArgumentParser(description='Urban Vision · recorrido en vivo en Windows')
     parser.add_argument('--device', choices=('auto', 'cpu', 'cuda'), default='auto')
     parser.add_argument('--output-root', type=Path, default=ROOT / 'outputs/live')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--location', choices=('auto', 'windows', 'phone', 'mock'), default='auto')
+    modes.add_argument('--no-gps', action='store_true', help='Iniciar directamente con ruta simulada')
+    parser.add_argument('--phone-port', type=int, default=8766)
     parser.add_argument('--road-roi', nargs=4, type=float, default=RoadDamageConfig.roi)
     parser.add_argument('--no-road-area', action='store_true', help='Desactivar el filtro de veredas para otra cámara')
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format='%(message)s')
-    location = WindowsLocation()
+    location = AutomaticLocation(phone=PhoneLocation(port=args.phone_port),
+                                 mode='mock' if args.no_gps else args.location)
     road = RoadDamageConfig(enabled=True, frame_interval=1, model=ROOT / 'models/pothole_yolov8s.pt',
                             roi=tuple(args.road_roi), road_area=None if args.no_road_area else RoadDamageConfig.road_area)
     app = LiveApplication(location, args.output_root, args.device, road)
