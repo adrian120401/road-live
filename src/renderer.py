@@ -49,6 +49,7 @@ class FrameMetrics:
     total_frames: int
     source_fps: float
     processing_fps: float
+    elapsed_seconds: float | None = None
 
 
 class Renderer:
@@ -316,7 +317,7 @@ class Renderer:
             extra += 23
         divider_y = top + self.px(84 + extra)
         cv2.line(frame, (inner, divider_y), (right - self.px(12), divider_y), (72, 77, 65), self.px(1), AA)
-        elapsed = metrics.frame / metrics.source_fps
+        elapsed = metrics.elapsed_seconds if metrics.elapsed_seconds is not None else metrics.frame / metrics.source_fps
         minutes, seconds = divmod(int(elapsed), 60)
         frame_total = str(metrics.total_frames) if metrics.total_frames else "?"
         self.text(frame, f"F {metrics.frame:04d}/{frame_total}",

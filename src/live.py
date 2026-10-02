@@ -1,4 +1,4 @@
-"""Loopback-only HTTP presentation: browser webcam, Python inference, native GPS."""
+"""Native desktop entrypoint; legacy headless HTTP adapter for integration tests."""
 
 import argparse
 from concurrent.futures import TimeoutError
@@ -8,7 +8,6 @@ import logging
 import math
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
-import webbrowser
 from threading import Lock
 
 from .config import RoadDamageConfig
@@ -146,9 +145,7 @@ def create_server(app, port=8765):
 def main():
     parser = argparse.ArgumentParser(description='Urban Vision · recorrido en vivo en Windows')
     parser.add_argument('--device', choices=('auto', 'cpu', 'cuda'), default='auto')
-    parser.add_argument('--port', type=int, default=8765, help='0 elige un puerto libre')
     parser.add_argument('--output-root', type=Path, default=ROOT / 'outputs/live')
-    parser.add_argument('--no-open', action='store_true')
     parser.add_argument('--road-roi', nargs=4, type=float, default=RoadDamageConfig.roi)
     parser.add_argument('--no-road-area', action='store_true', help='Desactivar el filtro de veredas para otra cámara')
     args = parser.parse_args()
@@ -163,16 +160,12 @@ def main():
         if not (ROOT / 'yolo26n.pt').is_file():
             raise ValueError('Falta yolo26n.pt. Descargalo siguiendo la guía de Windows del README.')
         location.start()
-        server, url = create_server(app, args.port)
-        print(f'Urban Vision | Recorrido en vivo: {url}\nDejá esta terminal abierta. Ctrl+C guarda un recorrido parcial y cierra el programa.', flush=True)
-        if not args.no_open:
-            webbrowser.open(url)
-        with server:
-            try:
-                server.serve_forever()
-            except KeyboardInterrupt:
-                pass
-        return 0
+        try:
+            from .live_desktop import run_desktop
+        except ImportError as exc:
+            raise ValueError('Instalá la interfaz con pip install -r requirements-desktop.txt') from exc
+        print('Urban Vision | C: cámara · Esc/F: finalizar y ver mapa', flush=True)
+        return run_desktop(location, args.output_root.resolve(), args.device, road)
     except (ValueError, OSError) as exc:
         print(f'Error: {exc}', flush=True)
         return 1

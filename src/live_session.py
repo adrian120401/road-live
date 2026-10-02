@@ -1,4 +1,4 @@
-"""One bounded, sequential inference worker per live trip; no MP4 time approximation."""
+"""Bounded sequential inference and trip exports for live camera capture."""
 
 from concurrent.futures import Future
 from dataclasses import asdict, replace
@@ -16,6 +16,7 @@ import numpy as np
 from .analytics import Analytics
 from .config import Config, RoadDamageConfig
 from .live_location import LiveRoute
+from .live_video import LiveVideo, portrait_frame
 from .map_renderer import render_map
 from .renderer import FrameMetrics, Renderer
 from .road_analytics import RoadAnalytics
@@ -31,8 +32,11 @@ class FrameError(ValueError):
 class LiveSession:
     TERMINAL = {'finished', 'error'}
 
-    def __init__(self, location, output_root: Path, device='auto', road_config=None):
+    def __init__(self, location, output_root: Path, device='auto', road_config=None, *, desktop=False):
         self.location = location
+        self.desktop = desktop
+        self.video = None
+        self.finish_epoch = None
         self.id = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S_') + uuid4().hex[:8]
         self.directory = output_root / self.id
         self.config = Config(Path('live-camera'), self.directory / 'recorrido.mp4',
@@ -87,7 +91,7 @@ class LiveSession:
                     'summary_url': f'/outputs/{self.id}/recorrido.json'
                     if self.done.is_set() and (self.directory / 'recorrido.json').is_file() else None}
 
-    def submit(self, data: bytes, epoch: float):
+    def submit(self, data: bytes | np.ndarray, epoch: float):
         future = Future()
         with self.lock:
             if self.stop.is_set() or self.state in self.TERMINAL:
@@ -104,12 +108,17 @@ class LiveSession:
             if self.stop.is_set() or self.state in self.TERMINAL:
                 return
             self.stop_reason = reason
+            self.finish_epoch = time.time()
+            if self.video:
+                self.video.end_at(self.finish_epoch)
             self.state = 'finishing'
             self.reason = 'Guardando recorrido y evidencias…'
             self.stop.set()
 
     def _pause(self, reason):
         if self.state != 'paused':
+            if self.video:
+                self.video.pause()
             if self.road:
                 for track_id in list(self.road.associator.tracks):
                     self.road_analytics._finalize(track_id)
@@ -140,12 +149,14 @@ class LiveSession:
         now = time.time()
         if not np.isfinite(epoch) or not -1 <= now - epoch <= 2:
             return None  # Never process a queued old camera image.
-        frame = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
+        frame = data if isinstance(data, np.ndarray) else cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
         if frame is None or max(frame.shape[:2]) > 4096:
             raise FrameError('Imagen de cámara inválida o demasiado grande.')
         fix = self._check_location()
         if fix is None:
             return None
+        if self.desktop:
+            frame = portrait_frame(frame)
         height, width = frame.shape[:2]
         size = working_size(width, height, self.config.processing_max_side)
         if size != (width, height):
@@ -165,38 +176,50 @@ class LiveSession:
         if (width, height) != (self.renderer.width, self.renderer.height):
             raise ValueError('La cámara cambió de resolución. Finalizá y comenzá otro recorrido.')
         timestamp = epoch - self.started_epoch
-        if timestamp <= self.last_timestamp:
+        if timestamp < 0 or timestamp <= self.last_timestamp:
             return None
         # Require a fix valid at the image's capture time as well as now.
         if not -1 <= epoch - fix.epoch <= self.location.max_age:
             return None
         started = time.perf_counter()
-        self.route.append(timestamp, fix)
         detections = self.tracker.update(frame)
         detections = [replace(d, track_id=d.track_id + self.id_offset) if d.track_id is not None else d
                       for d in detections]
         self.max_general_id = max([self.max_general_id] + [d.track_id for d in detections if d.track_id is not None])
         number = self.frames + 1
         road_state = self.road.update(frame, number, timestamp=timestamp)
+        # A slow model must not register an observation after GPS was lost.
+        if self._check_location() is None:
+            return None
+        self.route.append(timestamp, fix)
         self.road_analytics.update(road_state, frame, number, timestamp)
         self.analytics.update(detections, number)
         elapsed = time.perf_counter() - started
         image = self.renderer.render(frame, detections, self.analytics,
-                                     FrameMetrics(number, 0, 10, 1 / max(elapsed, .000001)),
+                                     FrameMetrics(number, 0, 30 if self.desktop else 10,
+                                                  1 / max(elapsed, .000001), timestamp),
                                      road=road_state, potholes=self.road_analytics.count)
-        ok, encoded = cv2.imencode('.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 82])
+        if self.desktop:
+            if self.video is None:
+                self.video = LiveVideo(self.config.output_path)
+                if self.finish_epoch is not None:
+                    self.video.end_at(self.finish_epoch)
+            self.video.update(image, epoch)
+            ok, encoded = True, image
+        else:
+            ok, encoded = cv2.imencode('.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 82])
         if not ok:
             raise RuntimeError('No se pudo generar la vista de detecciones.')
         with self.lock:
             self.frames = number
             self.last_timestamp = timestamp
             self.stage_seconds += time.perf_counter() - started
-        return encoded.tobytes()
+        return encoded if self.desktop else encoded.tobytes()
 
     def _run(self):
         try:
             while not self.stop.is_set():
-                if time.monotonic() - self.last_contact > 10:
+                if not self.desktop and time.monotonic() - self.last_contact > 10:
                     self.finish('client_disconnected')
                     break
                 self._check_location()
@@ -240,6 +263,11 @@ class LiveSession:
             self.done.set()
 
     def _export(self):
+        if self.video:
+            try:
+                self.video.finish(self.finish_epoch)
+            except Exception as exc:
+                self.export_errors.append(f'Video: {exc}')
         complete = self.stop_reason == 'user_finished' and not self.error
         events_path = self.directory / 'recorrido_events.json'
         road_summary = {'potholes': 0, 'saved_evidence': 0}
@@ -250,6 +278,11 @@ class LiveSession:
                 self.export_errors.append(f'Evidencias: {exc}')
         events = list(self.road_analytics.events.values()) if self.road_analytics else []
         for event in events:
+            if self.video:
+                epoch = self.started_epoch + event['timestamp']
+                position = self.video.timestamp(epoch)
+                event['video_timestamp'] = round(position, 3) if position is not None else None
+                event['video_frame'] = int(position * self.video.fps) if position is not None else None
             point = self.route.point_at(event['timestamp'])
             event.update(latitude=point.latitude, longitude=point.longitude, location_source='windows',
                          location_accuracy_m=self.route.accuracy_at(event['timestamp']))
@@ -276,6 +309,7 @@ class LiveSession:
                   'frames_processed': self.frames, 'duration_seconds': round(self.elapsed, 3),
                   'processing_fps': round(self.frames / self.stage_seconds, 3) if self.stage_seconds else 0,
                   'error': self.error, 'export_errors': self.export_errors,
+                  'video': self.video.report() if self.video else None,
                   'location': location_report, 'road_damage': road_summary, **self.analytics.report()}
         (self.directory / 'recorrido.json').write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding='utf-8')
 

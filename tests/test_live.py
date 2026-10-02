@@ -56,6 +56,24 @@ class FixedRoad:
 
 
 class LocationTests(unittest.TestCase):
+    def test_native_permission_and_accuracy_are_independent_and_provider_is_not_guessed(self):
+        location = WindowsLocation()
+        update_location(location, accuracy=141)
+        state, _ = location.snapshot()
+        self.assertEqual(state['source'], 'windows')
+        self.assertEqual(state['api'], 'System.Device.Location.GeoCoordinateWatcher')
+        self.assertEqual(state['permission'], 'Granted')
+        self.assertEqual(state['status'], 'Ready')
+        self.assertEqual(state['position_source'], 'Unknown')
+        self.assertEqual(state['accuracy_m'], 141)
+        self.assertFalse(state['valid'])
+        self.assertIn('Precisión insuficiente', state['reason'])
+        location.ingest({'status': 'Initializing', 'permission': 'Granted'})
+        state, _ = location.snapshot()
+        self.assertEqual(state['permission'], 'Granted')
+        self.assertIn('buscando', state['reason'])
+        self.assertNotIn('Activá', state['reason'])
+
     def test_location_gate_rejects_old_inaccurate_denied_and_nonfinite_positions(self):
         location = WindowsLocation()
         for accuracy, age in ((26, 0), (8, 6), (float('nan'), 0)):

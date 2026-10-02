@@ -30,6 +30,8 @@ class WindowsLocation:
         self.lock = Lock()
         self.fix: LocationFix | None = None
         self.reason = 'Esperando ubicación de Windows…'
+        self.permission = 'Unknown'
+        self.status = 'Initializing'
         self.process = None
         self.thread = None
 
@@ -50,12 +52,19 @@ class WindowsLocation:
 
     def ingest(self, row):
         with self.lock:
+            self.permission = row.get('permission', 'Unknown')
+            self.status = row.get('status', 'Unknown')
             self.fix = None
             if row.get('permission') == 'Denied':
                 self.reason = 'Windows denegó la ubicación. Revisá Configuración > Privacidad y seguridad > Ubicación.'
                 return
             if row.get('status') != 'Ready':
-                self.reason = row.get('error') or 'Ubicación no disponible. Activá el servicio de ubicación de Windows.'
+                reasons = {
+                    'Initializing': 'Windows está buscando una posición…',
+                    'NoData': 'Windows no recibió una posición. Revisá el receptor o la señal de ubicación.',
+                    'Disabled': 'El servicio de ubicación de Windows está desactivado.',
+                }
+                self.reason = row.get('error') or reasons.get(row.get('status'), 'Ubicación de Windows no disponible.')
                 return
             try:
                 lat, lon, accuracy = (float(row[k]) for k in ('latitude', 'longitude', 'accuracy_m'))
@@ -83,12 +92,16 @@ class WindowsLocation:
         now = time.time() if now is None else now
         with self.lock:
             fix, reason = self.fix, self.reason
+            permission, status = self.permission, self.status
         age = now - fix.epoch if fix else None
         valid = bool(fix and -1 <= age <= self.max_age and fix.accuracy_m <= self.max_accuracy)
         if fix and not valid:
             reason = ('Ubicación antigua; esperando una nueva posición.' if age > self.max_age or age < -1
                       else f'Precisión insuficiente: ±{fix.accuracy_m:.0f} m (máximo {self.max_accuracy:g} m).')
         return {'valid': valid, 'source': 'windows', 'reason': reason,
+                'api': 'System.Device.Location.GeoCoordinateWatcher',
+                'permission': permission, 'status': status,
+                'position_source': 'Unknown',
                 'accuracy_m': fix.accuracy_m if fix else None,
                 'age_seconds': round(max(0, age), 1) if age is not None else None,
                 'max_accuracy_m': self.max_accuracy, 'max_age_seconds': self.max_age}, fix

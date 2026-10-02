@@ -6,7 +6,7 @@ V2 agrega un segundo modelo local de **potholes**, eventos independientes y foto
 V3 agrega ubicación temporal real o simulada, mínimo de confianza del **50%** y mapa interactivo.
 V3.1 suma revisión de cebras con YOLOE, profundidad YOLO26 y proximidad experimental,
 con capas opcionales, métricas por etapa y mapa con evidencias ampliables.
-Procesa video offline y ofrece una interfaz web local para recorridos con webcam en Windows;
+Procesa video offline y ofrece una aplicación dedicada para recorridos con webcam en Windows;
 no entrena modelos ni requiere servicios cloud para detección.
 
 ## Recorrido en vivo en Windows
@@ -19,24 +19,37 @@ Con las dependencias y los modelos instalados, ejecutar en PowerShell desde el p
 .\.venv\Scripts\python.exe -m src.live --device auto
 ```
 
-Se abre la página local: habilitar cámara, elegir webcam (botón **Cámara** o tecla **C**),
-esperar ubicación de Windows con precisión ≤25 m y antigüedad ≤5 s y pulsar
-**Iniciar recorrido**. **Finalizar recorrido** guarda eventos, fotos y resumen y muestra
-automáticamente el mapa en la misma página. Al perder ubicación válida se pausa el registro;
-la vista de cámara continúa y se reanuda al recuperar la posición.
+Instalar la interfaz con `pip install -r requirements-desktop.txt` usando el Python del entorno.
+Se abre una ventana **9:16**, con recorte central y el HUD original. **C** permite elegir
+cámara antes de iniciar. Esperar ubicación nativa de Windows con precisión ≤25 m y
+antigüedad ≤5 s y pulsar **Iniciar recorrido**, abajo. **Esc** o **F** finaliza y muestra
+el mapa interactivo en la misma ventana. **Nuevo recorrido** vuelve a la cámara.
 
-Cada sesión se guarda en `outputs/live/<fecha_id>/`: `map.html`, `recorrido.json`,
-`recorrido_events.json` y fotos en `recorrido_events/`. El modo en vivo no exporta MP4.
-La captura usa el navegador; la ubicación viene del servicio nativo de Windows, mediante
-Windows PowerShell 5.1 y .NET Framework. No usa geolocalización del navegador ni simula GPS.
-Una laptop puede entregar ubicación por Wi-Fi/IP: si no alcanza los requisitos, no podrá iniciar.
-El fondo de calles requiere internet; detección, ruta y evidencias se procesan localmente.
+Cada sesión guarda `recorrido.mp4` (**1080×1920, 30 FPS, sin audio**), `map.html`,
+`recorrido.json`, `recorrido_events.json` y fotos en `outputs/live/<fecha_id>/`.
+La grabación comienza con la primera imagen analizada; repite imágenes si la inferencia
+es más lenta para conservar la duración real. Los controles no aparecen en el MP4.
+Al perder ubicación válida se pausa el registro y la grabación; se reanudan al recuperarla.
+Las evidencias incluyen su posición temporal en el clip (`video_timestamp`).
 
-`--port 0` elige un puerto libre; `--no-open` imprime la dirección sin abrir el navegador;
+La captura y la ubicación son nativas de Windows. Una laptop puede entregar ubicación
+por Wi-Fi/IP: si no alcanza los requisitos, no podrá iniciar. El fondo de calles requiere
+internet; detección, ruta y evidencias se procesan localmente.
 `--output-root` cambia la carpeta de sesiones. `--road-roi LEFT TOP RIGHT BOTTOM` y
-`--no-road-area` permiten ajustar la zona de detección para otra posición de cámara.
-Los defaults de ROI/calzada fueron revisados en los videos del proyecto: verificar encuadre
-antes de usar otra cámara. Cerrar la página/cámara o presionar Ctrl+C conserva un resultado parcial.
+`--no-road-area` ajustan la zona de detección a la cámara. Desconectar la cámara,
+cerrar con Alt+F4 o pulsar Ctrl+C conserva un resultado parcial.
+
+Si la ubicación supera ±25 m, ejecutar este diagnóstico independiente del navegador:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_location.py --seconds 15
+```
+
+Informa permisos del servicio nativo, margen de error y antigüedad de la posición.
+`Granted` con ±100 m o más significa que hay permiso pero la precisión es insuficiente.
+Esta API no identifica el proveedor físico: no se puede deducir GPS, Wi-Fi o IP del
+margen de error. Activar ubicación o dar permiso al navegador no confirma que la laptop
+tenga un receptor GPS/GNSS. Ver [diagnóstico en Windows](docs/WINDOWS.md#diagnosticar-la-ubicación).
 
 ## Instalación
 
@@ -45,7 +58,9 @@ Python 3.11 recomendado. En PowerShell, desde este directorio:
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cu118
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-desktop.txt
+.\.venv\Scripts\python.exe scripts/download_road_model.py
+.\.venv\Scripts\python.exe -c "from ultralytics import YOLO; YOLO('yolo26n.pt')"
 ```
 
 La variante CUDA 11.8 de PyTorch se eligió para la GTX 1050 Ti (Pascal).
