@@ -1,0 +1,13 @@
+{
+  "name": "Ruta simulada céntrica de Trinidad, Flores, Uruguay",
+  "description": "Corredor aproximado norte-sur próximo a Francisco Fondar y Plaza Constitución; no reconstruye el recorrido del video.",
+  "coordinate_order": "latitude,longitude",
+  "coordinates": [
+    [-33.5145, -56.8973],
+    [-33.5155, -56.8973],
+    [-33.5165, -56.8973],
+    [-33.5175, -56.8973],
+    [-33.5185, -56.8973],
+    [-33.5195, -56.8973]
+  ]
+}

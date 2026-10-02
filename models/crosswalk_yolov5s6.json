@@ -1,0 +1,50 @@
+{
+  "source": "https://github.com/kairess/crosswalk-traffic-light-detection-yolov5",
+  "revision": "5ba1e01d946e1a5cc9dcf396b3b8fc62ae2666d5",
+  "checkpoint_sha256": "7eb9e22c31e6eef68dce2cfd656fa27614e21203371cdf9255d942c86e29f127",
+  "sha256": "5737c815b3738cecd7ae28cc4a97b81984b87fd9c0fd18554672a0e0e208dae2",
+  "architecture": "YOLOv5s6",
+  "input_size": 640,
+  "names": {
+    "0": "Zebra_Cross",
+    "1": "R_Signal",
+    "2": "G_Signal"
+  },
+  "crosswalk_class": "Zebra_Cross",
+  "license": "GPL-3.0 (code)",
+  "declared_dataset": "SelectStar Intersection and currency information datasets",
+  "dataset_source": "https://open.selectstar.ai/",
+  "parity": [
+    {
+      "frame": 1,
+      "max_score_error": 2.5391578674316406e-05,
+      "max_coordinate_error_px": 0.00482177734375
+    },
+    {
+      "frame": 240,
+      "max_score_error": 2.4557113647460938e-05,
+      "max_coordinate_error_px": 0.00390625
+    },
+    {
+      "frame": 270,
+      "max_score_error": 2.9087066650390625e-05,
+      "max_coordinate_error_px": 0.00439453125
+    },
+    {
+      "frame": 300,
+      "max_score_error": 2.1457672119140625e-05,
+      "max_coordinate_error_px": 0.0037841796875
+    },
+    {
+      "frame": 1033,
+      "max_score_error": 3.173947334289551e-05,
+      "max_coordinate_error_px": 0.0047607421875
+    },
+    {
+      "frame": 1191,
+      "max_score_error": 2.467632293701172e-05,
+      "max_coordinate_error_px": 0.0037841796875
+    }
+  ],
+  "limitations": "Author-reported training; pedestrian viewpoint. Local dashcam quality requires review."
+}

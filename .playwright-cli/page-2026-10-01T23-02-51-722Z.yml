@@ -1,0 +1,54 @@
+- generic [ref=e1]:
+  - generic "Mapa del recorrido y pozos detectados" [ref=e2]:
+    - generic:
+      - generic:
+        - img:
+          - generic:
+            - generic [ref=e3] [cursor=pointer]
+            - generic [ref=e4] [cursor=pointer]
+            - generic [ref=e5] [cursor=pointer]
+      - generic [ref=e30]:
+        - generic [ref=e32]:
+          - 'heading "POZO · EVENTO #2" [level=3] [ref=e33]'
+          - generic [ref=e34]:
+            - term [ref=e35]: Track
+            - definition [ref=e36]: "#5"
+            - term [ref=e37]: Confianza
+            - definition [ref=e38]: 85%
+            - term [ref=e39]: Tiempo
+            - definition [ref=e40]: 6.800 s
+            - term [ref=e41]: Fotograma
+            - definition [ref=e42]: "205"
+            - term [ref=e43]: Ubicación
+            - definition [ref=e44]: Simulada (mock)
+          - link [ref=e45] [cursor=pointer]:
+            - /url: ../../urban_vision_v3_test_events/pothole_005.jpg
+            - img "Evidencia del pozo" [ref=e46]
+          - link "Abrir foto original" [ref=e47] [cursor=pointer]:
+            - /url: ../../urban_vision_v3_test_events/pothole_005.jpg
+        - button "Close popup" [ref=e49] [cursor=pointer]: ×
+    - generic:
+      - generic [ref=e6]:
+        - button "Zoom in" [ref=e7] [cursor=pointer]: +
+        - button "Zoom out" [ref=e8] [cursor=pointer]: −
+      - generic [ref=e9]:
+        - link "Leaflet" [ref=e10] [cursor=pointer]:
+          - /url: https://leafletjs.com
+        - text: "| ©"
+        - link "OpenStreetMap" [ref=e15] [cursor=pointer]:
+          - /url: https://www.openstreetmap.org/copyright
+        - text: contributors
+  - complementary [ref=e16]:
+    - heading "URBAN VISION" [level=1] [ref=e17]
+    - generic [ref=e18]: RUTA SIMULADA — TRINIDAD
+    - paragraph [ref=e19]: Simulación para desarrollo. No representa las ubicaciones reales del video.
+    - generic [ref=e20]: 3POZOS REGISTRADOS · EST.
+    - paragraph [ref=e21]: Prueba parcial · 12.0 s procesados
+    - generic [ref=e22]:
+      - generic [ref=e23]: ━ Recorrido
+      - generic [ref=e24]: ● Pozos
+    - generic [ref=e25]:
+      - 'button "POZO #1 · 65% · 2.53 s" [ref=e26] [cursor=pointer]'
+      - 'button "POZO #2 · 85% · 6.80 s" [active] [ref=e27] [cursor=pointer]'
+      - 'button "POZO #3 · 79% · 10.73 s" [ref=e28] [cursor=pointer]'
+  - status [ref=e29]: Fondo de calles no disponible. El recorrido y las evidencias siguen accesibles.

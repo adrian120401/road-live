@@ -1,0 +1,21 @@
+{
+  "author": "PeterHdd / peterhdd",
+  "architecture": "YOLOv8s",
+  "classes": [
+    "pothole"
+  ],
+  "source": "https://huggingface.co/peterhdd/pothole-detection-yolov8/resolve/101b80987b3fa86f9747d4170f936760ebad3a9f/best.pt",
+  "revision": "101b80987b3fa86f9747d4170f936760ebad3a9f",
+  "sha256": "af2ac6ce7bfec72e71643659ac946caf80ced84869e526a60135c457abfbb200",
+  "model_card": "https://huggingface.co/peterhdd/pothole-detection-yolov8",
+  "training_code": "https://github.com/PeterHdd/pothole-detection-yolo",
+  "declared_dataset": "https://huggingface.co/datasets/Ryukijano/Pothole-detection-Yolov8",
+  "dataset_original": "https://universe.roboflow.com/project-ssayl/potholes-detection-d4rma/dataset/1",
+  "checkpoint_class_names": {
+    "0": "0"
+  },
+  "verified_class_alias": {
+    "0": "pothole"
+  },
+  "limitations": "Published checkpoint, not independently validated on local roads. Dataset card lacks collection details."
+}

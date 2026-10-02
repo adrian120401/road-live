@@ -1,0 +1,61 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Urban Vision, inicio" [ref=e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e6]: URBAN VISION
+    - generic [ref=e7]: PERCEPCIÓN URBANA / LOCAL
+    - generic [ref=e8]: EN VIVO
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - paragraph [ref=e13]: 01 / REGISTRO DE CALLE
+        - heading "El recorrido empieza acá." [level=1] [ref=e14]
+        - paragraph [ref=e15]: Elegí tu cámara. Registrá la calle. Revisá cada hallazgo en el mapa.
+      - button "Cámara C" [expanded] [ref=e16] [cursor=pointer]:
+        - text: Cámara
+        - generic [ref=e17]: C
+    - region "Selección de cámara" [ref=e18]:
+      - generic [ref=e19]: CÁMARA DEL DISPOSITIVO
+      - combobox "CÁMARA DEL DISPOSITIVO" [disabled] [ref=e20]:
+        - option "Habilitá la cámara para ver los dispositivos" [selected]
+      - button "Habilitar cámara" [ref=e21] [cursor=pointer]
+      - generic [ref=e22]: El permiso de cámara se solicita en el navegador.
+    - generic [ref=e23]:
+      - region "Vista de cámara y detecciones" [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: VISTA DE CÁMARA
+          - generic [ref=e27]: SIN CONECTAR
+        - generic [ref=e29]:
+          - heading "Una cámara. Toda la calle." [level=2] [ref=e32]
+          - paragraph [ref=e33]: Habilitá una webcam para comenzar.
+        - generic [ref=e34]:
+          - generic [ref=e35]: Detección de objetos y pozos
+          - generic [ref=e36]: Confianza de pozos ≥ 50%
+      - complementary "Controles del recorrido" [ref=e37]:
+        - paragraph [ref=e38]: ESTADO DEL RECORRIDO
+        - heading "Preparar recorrido" [level=2] [ref=e39]
+        - status [ref=e40]: Habilitá una cámara y esperá una ubicación válida.
+        - generic [ref=e41]:
+          - heading "Ubicación de Windows" [level=3] [ref=e44]
+          - status [ref=e45]: "Precisión insuficiente: ±141 m (máximo 25 m)."
+          - generic [ref=e46]:
+            - generic [ref=e47]: PRECISIÓN
+            - strong [ref=e48]: ±141 m
+          - paragraph [ref=e49]: "Para iniciar: precisión ≤ 25 m y posición de hasta 5 s. Activá la ubicación en Windows."
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - generic [ref=e52]: TIEMPO
+            - strong [ref=e53]: 00:00
+          - generic [ref=e54]:
+            - generic [ref=e55]: POZOS / EST.
+            - strong [ref=e56]: "0"
+          - generic [ref=e57]:
+            - generic [ref=e58]: PROCESAMIENTO
+            - strong [ref=e59]: — FPS
+        - button "Iniciar recorrido" [disabled] [ref=e60]:
+          - text: Iniciar recorrido
+          - generic [aria-hidden] [ref=e61]: ↗
+        - paragraph [ref=e62]: Al finalizar, se guardan los datos y las fotos y se abre el mapa automáticamente.
+  - contentinfo [ref=e63]:
+    - generic [ref=e64]: URBAN VISION
+    - generic [ref=e65]: Los marcadores indican la posición aproximada del vehículo. Los conteos son estimados.

@@ -1,0 +1,34 @@
+- generic [active] [ref=e1]:
+  - generic "Mapa del recorrido y pozos detectados" [ref=e2]:
+    - generic:
+      - generic:
+        - img:
+          - generic:
+            - generic [ref=e3] [cursor=pointer]
+            - generic [ref=e4] [cursor=pointer]
+            - generic [ref=e5] [cursor=pointer]
+    - generic:
+      - generic [ref=e6]:
+        - button "Zoom in" [ref=e7] [cursor=pointer]: +
+        - button "Zoom out" [ref=e8] [cursor=pointer]: −
+      - generic [ref=e9]:
+        - link "Leaflet" [ref=e10] [cursor=pointer]:
+          - /url: https://leafletjs.com
+        - text: "| ©"
+        - link "OpenStreetMap" [ref=e15] [cursor=pointer]:
+          - /url: https://www.openstreetmap.org/copyright
+        - text: contributors
+  - complementary [ref=e16]:
+    - heading "URBAN VISION" [level=1] [ref=e17]
+    - generic [ref=e18]: RUTA SIMULADA — TRINIDAD
+    - paragraph [ref=e19]: Simulación para desarrollo. No representa las ubicaciones reales del video.
+    - generic [ref=e20]: 3POZOS REGISTRADOS · EST.
+    - paragraph [ref=e21]: Prueba parcial · 12.0 s procesados
+    - generic [ref=e22]:
+      - generic [ref=e23]: ━ Recorrido
+      - generic [ref=e24]: ● Pozos
+    - generic [ref=e25]:
+      - 'button "POZO #1 · 65% · 2.53 s" [ref=e26] [cursor=pointer]'
+      - 'button "POZO #2 · 85% · 6.80 s" [ref=e27] [cursor=pointer]'
+      - 'button "POZO #3 · 79% · 10.73 s" [ref=e28] [cursor=pointer]'
+  - status [ref=e29]: Fondo de calles no disponible. El recorrido y las evidencias siguen accesibles.

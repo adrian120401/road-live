@@ -1,0 +1,9 @@
+# Optional legacy YOLOv5 exporter only; install --target tools/crosswalk-export-deps.
+onnx==1.17.0
+pandas==2.2.3
+seaborn==0.13.2
+scipy==1.15.3
+protobuf==5.29.5
+pytz==2025.2
+tzdata==2025.2
+tqdm==4.67.1

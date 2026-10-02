@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Urban Vision · Recorrido en vivo</title>
+  <link rel="stylesheet" href="/live.css">
+  <script src="/live.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Urban Vision, inicio"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 29 13 3h6l5 26M16 6v4m0 4v4m0 4v5"/></svg><span>URBAN <b>VISION</b></span></a>
+    <span class="topnote">PERCEPCIÓN URBANA / LOCAL</span>
+    <span class="live-tag"><i></i> EN VIVO</span>
+  </header>
+  <main>
+    <section class="heading"><div><p class="eyebrow">URBAN VISION / REGISTRO DE CALLE</p><h1 id="page-title">El recorrido empieza acá.</h1><p id="page-intro" class="intro">Elegí tu cámara. Registrá la calle. Revisá cada hallazgo en el mapa.</p></div><button id="camera-toggle" class="secondary" aria-expanded="true" aria-controls="camera-panel">Cámara <kbd>C</kbd></button></section>
+    <section id="camera-panel" class="camera-panel" aria-label="Selección de cámara">
+      <label for="camera-select">CÁMARA DEL DISPOSITIVO</label>
+      <select id="camera-select" disabled><option>Habilitá la cámara para ver los dispositivos</option></select>
+      <button id="camera-enable" class="secondary">Habilitar cámara</button>
+      <span id="camera-message">El permiso de cámara se solicita en el navegador.</span>
+    </section>
+    <div id="capture-layout" class="capture-layout">
+      <section class="viewer" aria-label="Vista de cámara y detecciones">
+        <div class="viewer-bar"><span id="view-label">VISTA DE CÁMARA</span><span id="camera-label">SIN CONECTAR</span></div>
+        <div class="screen">
+          <video id="camera-video" autoplay playsinline muted hidden></video>
+          <img id="processed-image" alt="Cámara con detecciones urbanas y pozos" hidden>
+          <div id="placeholder" class="placeholder"><svg viewBox="0 0 80 80" aria-hidden="true"><path d="m21 68 13-56h12l13 56M40 17v9m0 9v9m0 9v9M10 68h60"/></svg><h2>Una cámara. Toda la calle.</h2><p>Habilitá una webcam para comenzar.</p></div>
+          <span id="screen-badge" hidden>REGISTRO PAUSADO</span>
+        </div>
+        <div class="viewer-footer"><span>Detección de objetos y pozos</span><span>Confianza de pozos ≥ 50%</span></div>
+      </section>
+      <aside class="control-panel" aria-label="Controles del recorrido">
+        <p class="eyebrow">ESTADO DEL RECORRIDO</p>
+        <h2 id="trip-state">Preparar recorrido</h2>
+        <p id="trip-reason" class="reason" role="status" aria-live="polite">Habilitá una cámara y esperá una ubicación válida.</p>
+        <div class="location-panel"><div class="location-heading"><span id="gps-dot" class="status-dot"></span><h3>Ubicación de Windows</h3></div><p id="gps-reason" role="status">Consultando ubicación…</p><div class="precision"><span>PRECISIÓN</span><strong id="gps-accuracy">—</strong></div><p class="location-note">Para iniciar: precisión ≤ 25 m y posición de hasta 5 s. Activá la ubicación en Windows.</p></div>
+        <div class="metrics"><div><span>TIEMPO</span><strong id="duration">00:00</strong></div><div><span>POZOS / EST.</span><strong id="potholes">0</strong></div><div><span>PROCESAMIENTO</span><strong id="fps">— <small>FPS</small></strong></div></div>
+        <button id="start" class="primary" disabled>Iniciar recorrido <span aria-hidden="true">↗</span></button>
+        <button id="finish" class="finish" hidden>Finalizar recorrido <span aria-hidden="true">→</span></button>
+        <p class="save-note">Al finalizar, se guardan los datos y las fotos y se abre el mapa automáticamente.</p>
+      </aside>
+    </div>
+    <section id="results" hidden aria-label="Resultado del recorrido">
+      <div class="result-heading"><div><p class="eyebrow">02 / RESULTADO</p><h2 id="result-title">Recorrido registrado.</h2><p id="result-summary"></p></div><div class="result-actions"><a id="download-summary" class="secondary" download>Guardar resumen</a><button id="new-trip" class="primary">Nuevo recorrido ↗</button></div></div>
+      <iframe id="map" title="Mapa del recorrido y pozos detectados"></iframe>
+    </section>
+    <p id="error" class="error" role="alert" hidden></p>
+  </main>
+  <footer><span>URBAN VISION</span><span>Los marcadores indican la posición aproximada del vehículo. Los conteos son estimados.</span></footer>
+</body>
+</html>
