@@ -56,6 +56,10 @@ class PhoneLocation(WindowsLocation):
         self.token = secrets.token_urlsafe(24)
         self.server = self.server_thread = None
         self.receiver_error = None
+        self.messages_received = 0
+        self.last_received_epoch = None
+        self.last_message_type = None
+        self.last_error = None
         self.reason = 'Esperando ubicación del iPhone · P para configurar'
 
     @property
@@ -76,6 +80,10 @@ class PhoneLocation(WindowsLocation):
     def ingest_phone(self, payload):
         if not isinstance(payload, dict):
             raise ValueError('Se requiere un objeto OwnTracks.')
+        with self.lock:
+            self.messages_received += 1
+            self.last_received_epoch = time.time()
+            self.last_message_type = str(payload.get('_type', ''))[:40]
         if payload.get('_type') != 'location':
             return False  # OwnTracks also sends transitions/cards; acknowledge those.
         try:
@@ -97,12 +105,33 @@ class PhoneLocation(WindowsLocation):
             self.fix = replace(self.fix, source='phone')
         return True
 
+    def receiver_status(self):
+        state, _ = self.snapshot()
+        with self.lock:
+            return {'receiver': 'Urban Vision iPhone', 'online': self.server is not None,
+                    'messages_received': self.messages_received,
+                    'last_message_type': self.last_message_type,
+                    'seconds_since_message': round(time.time() - self.last_received_epoch, 1)
+                    if self.last_received_epoch is not None else None,
+                    'last_error': self.last_error, 'location': state}
+
     def start(self):
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args):
                 pass  # Do not log the pairing token or coordinates.
+
+            def do_GET(self):
+                authorized = urlsplit(self.path).path == owner.endpoint_path
+                body = json.dumps(owner.receiver_status() if authorized else {'error': 'URL de emparejamiento incorrecta.'},
+                                  ensure_ascii=False).encode('utf-8')
+                self.send_response(200 if authorized else 403)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
 
             def do_POST(self):
                 self.connection.settimeout(5)
@@ -116,7 +145,11 @@ class PhoneLocation(WindowsLocation):
                             raise ValueError('Tamaño inválido')
                         if length:
                             owner.ingest_phone(json.loads(self.rfile.read(length)))
-                    except (ValueError, TypeError, OSError):
+                        with owner.lock:
+                            owner.last_error = None
+                    except (ValueError, TypeError, OSError) as exc:
+                        with owner.lock:
+                            owner.last_error = str(exc)
                         status, response = 400, b'[]'
                 self.send_response(status)
                 self.send_header('Content-Type', 'application/json')

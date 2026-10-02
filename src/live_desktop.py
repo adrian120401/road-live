@@ -188,6 +188,11 @@ class LiveWindow(QWidget):
             text = phone.receiver_error or 'Seleccioná Automático o Solo iPhone con G para activar el receptor.'
         else:
             urls = phone.urls()
+            status = phone.receiver_status()
+            fix = status['location']
+            diagnostic = (f'Mensajes recibidos: {status["messages_received"]} · tipo: {status["last_message_type"] or "ninguno"}\n'
+                          f'Precisión: {fix["accuracy_m"]} m · antigüedad: {fix["age_seconds"]} s\n'
+                          + (f'Último error: {status["last_error"]}\n' if status['last_error'] else ''))
             text = ('Camo transmite la cámara. OwnTracks transmite la ubicación.\n\n'
                     '1. Instalá OwnTracks en el iPhone.\n'
                     '2. Conexión HTTP: copiá la URL de la interfaz de red compartida.\n'
@@ -195,7 +200,8 @@ class LiveWindow(QWidget):
                     '4. Usá la misma Wi-Fi o una red de Compartir Internet por USB.\n\n'
                     + ('\n\n'.join(urls) if urls else 'No se encontró una dirección de red. Conectá Wi-Fi o Compartir Internet.')
                     + '\n\nEl cable de Camo por sí solo no crea esta conexión de ubicación.\n'
-                    'La URL cambia al reiniciar. Si Windows pregunta por firewall, permití la red privada.')
+                    'La URL cambia al reiniciar. Si Windows pregunta por firewall, permití la red privada.\n\n'
+                    + diagnostic + '\nPara comprobar la red, abrí la URL completa en Safari: debe mostrar online=true.')
         dialog.setText(text)
         dialog.exec()
 

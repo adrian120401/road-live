@@ -88,6 +88,22 @@ La ubicación usa un canal independiente mediante **OwnTracks para iOS**:
 6. Enviar una ubicación manual para comprobar la conexión. Si Windows solicita acceso de Python a la red, permitir la red privada usada para el teléfono. La URL HTTP se usa en esa red compartida, sin publicar el receptor en internet.
 7. Volver a Camo en el iPhone y comprobar que OwnTracks siga enviando posiciones en segundo plano. El modo de ubicación de la laptop debe indicar **iPhone**. El sistema comprueba precisión y tiempo originales de cada mensaje; retrasos de iOS, señal insuficiente o falta de conexión producen pausa en un recorrido real.
 
+Si OwnTracks no se detecta, comprobar la configuración exportada:
+`mode: 3` es HTTP, `monitoring: 2` es Move, `locatorInterval: 1` y
+`locatorDisplacement: 1`. `monitoring: 1` es cambios significativos y no sirve para
+posiciones cada pocos segundos. No confundir la configuración (`_type: configuration`)
+o los waypoints con un mensaje de ubicación (`_type: location`, con `lat`, `lon`, `acc`, `tst`).
+
+En la versión actualizada, abrir la URL completa que muestra **P** en Safari del iPhone
+devuelve un diagnóstico sin coordenadas. `online: true` confirma conexión al receptor;
+`messages_received: 0` indica que todavía no llegaron mensajes de OwnTracks.
+`last_error` muestra mensajes rechazados y `location` indica precisión y antigüedad.
+Si Safari no conecta, revisar la Wi-Fi compartida, acceso a red local en iOS y firewall
+de Python en Windows. Si responde 403, la URL/token no corresponde a la ejecución actual.
+Si el recorrido ya comenzó en simulación, finalizarlo y crear otro para usar el iPhone:
+la fuente queda fija dentro de cada recorrido. **Solo iPhone**, seleccionado con **G**,
+facilita la prueba porque no cambia a simulación mientras se configura el teléfono.
+
 La recepción y el protocolo se verificaron con mensajes de prueba; la combinación
 OwnTracks en segundo plano + Camo debe comprobarse en el iPhone concreto. No se garantiza
 que iOS mantenga lecturas cada segundo. Si no cumple la precisión/frecuencia, usar Sin GPS.

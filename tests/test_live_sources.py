@@ -54,10 +54,17 @@ class SourceTests(unittest.TestCase):
         with post(phone.endpoint_path, payload()) as response:
             self.assertEqual(json.load(response), [])
         self.assertTrue(phone.snapshot()[0]['valid'])
+        with urlopen(url + phone.endpoint_path, timeout=5) as response:
+            status = json.load(response)
+        self.assertTrue(status['online'])
+        self.assertEqual(status['messages_received'], 1)
+        self.assertEqual(status['last_message_type'], 'location')
+        self.assertNotIn('latitude', json.dumps(status))
         with post(phone.endpoint_path, {'_type': 'transition'}) as response:
             self.assertEqual(response.status, 200)
         with self.assertRaises(HTTPError):
             post(phone.endpoint_path, payload(acc=0))
+        self.assertIsNotNone(phone.receiver_status()['last_error'])
 
     def test_auto_waits_then_phone_then_simulation_and_locks_source_for_trip(self):
         windows = WindowsLocation()
