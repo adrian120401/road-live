@@ -1,5 +1,13 @@
 # Urban Vision
 
+## Recorrido grabado: análisis offline y mapa editable
+
+Para el video 4K/60 `recorrido.MOV`, usar el flujo de
+[análisis y revisión manual](docs/OFFLINE.md): dibujar las calles y giros, ubicar o
+descartar detecciones mirando sus fotos y exportar el video con el mapa al cierre.
+Se excluyen camiones y bicicletas del análisis y del HUD. Las detecciones originales
+se conservan separadas de la revisión; la exportación no repite la inferencia.
+
 Prototipo local de percepción urbana con **YOLO26n**, **BoT-SORT**, IDs persistentes,
 conteos aproximados de objetos únicos, trayectorias cortas y un HUD propio.
 V2 agrega un segundo modelo local de **potholes**, eventos independientes y fotos de evidencia.
@@ -132,9 +140,10 @@ reexportar desde el editor usado para el Reel.
 
 ## Conteos y límites
 
-Clases: person, car, motorcycle, bicycle, bus, truck, traffic light y stop sign.
-**VEHICLES significa solo autos**; motos, buses y camiones tienen contadores separados.
-El HUD muestra autos, personas, motos y bicicletas. El JSON y el log incluyen las ocho clases.
+Clases activas: person, car, motorcycle, bus, traffic light y stop sign.
+**VEHICLES significa solo autos**; motos y buses tienen contadores separados.
+El HUD muestra autos, personas y motos. Camiones y bicicletas quedaron excluidos.
+Los informes históricos anteriores pueden conservar esas categorías.
 
 `stop sign` requiere confianza >= 0.65 para mostrarlo y contabilizarlo. La revisión del video
 encontró señales amarillas de badén mal clasificadas como STOP con confianza máxima 0.61.
@@ -274,7 +283,8 @@ pasadas finales; el video completo y las fotos pasaron la auditoría.
 ## Interfaz en español y videos originales del iPhone
 
 El HUD, los boxes, el modo debug y las fotos de evidencia se muestran en español:
-AUTO, PERSONA, MOTO, BICICLETA, ÓMNIBUS, CAMIÓN, SEMÁFORO, PARE y POZO.
+AUTO, PERSONA, MOTO, ÓMNIBUS, SEMÁFORO, PARE y POZO. Se conservan traducciones internas
+de BICICLETA y CAMIÓN para informes históricos, pero esas clases están desactivadas.
 Se mantiene el nombre Urban Vision. Los nombres internos de clases y las claves JSON
 se conservan para mantener compatibilidad con modelos y analytics.
 Pillow renderiza tildes y caracteres Unicode en pequeños recortes de texto cacheados;
@@ -539,7 +549,7 @@ la mediana de la zona central/inferior de cada caja, después de descartar valor
 y extremos. La muestra requiere 75% de píxeles válidos; se invalida al cambiar mucho la caja
 o superar su tiempo de vigencia. Nunca se lee un único píxel ni se redimensiona un depth map a 4K.
 
-El candidato debe ser AUTO/MOTO/ÓMNIBUS/CAMIÓN y tener centro y base dentro del trapecio
+El candidato debe ser AUTO/MOTO/ÓMNIBUS y tener centro y base dentro del trapecio
 configurable. Cinco frames de presencia, dos muestras nuevas para subir de estado y tres
 para bajar, mediana temporal e histéresis reducen oscilaciones. Cambiar o perder el ID reinicia
 la persistencia. El HUD muestra **VEHÍCULO DELANTE / PRECAUCIÓN / CERCA**; no muestra metros.

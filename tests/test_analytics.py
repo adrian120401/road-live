@@ -46,10 +46,10 @@ class AnalyticsTests(unittest.TestCase):
     def test_class_change_does_not_create_second_count(self):
         analytics = Analytics()
         analytics.update([observation(1)], 1)
-        analytics.update([observation(1, "truck")], 2)
+        analytics.update([observation(1, "bus")], 2)
         self.assertEqual(analytics.counts["car"], 1)
-        self.assertEqual(analytics.counts["truck"], 0)
-        self.assertEqual(analytics.class_for(observation(1, "truck")), "car")
+        self.assertEqual(analytics.counts["bus"], 0)
+        self.assertEqual(analytics.class_for(observation(1, "bus")), "car")
         self.assertEqual(analytics.tracks[1].class_changes, 1)
 
     def test_history_is_bounded_by_frames_not_just_samples(self):
@@ -76,7 +76,7 @@ class AnalyticsTests(unittest.TestCase):
     def test_alternating_class_noise_does_not_flicker_label(self):
         analytics = Analytics()
         for frame in range(1,30):
-            analytics.update([observation(1,"car" if frame%2 else "truck")],frame)
+            analytics.update([observation(1,"car" if frame%2 else "bus")],frame)
             self.assertEqual(analytics.class_for(observation(1)),"car")
 
     def test_reappearing_id_does_not_recount_after_history_expires(self):
@@ -100,6 +100,13 @@ class AnalyticsTests(unittest.TestCase):
         analytics = Analytics()
         analytics.update([observation(1, "dog")], 1)
         self.assertFalse(analytics.tracks)
+
+    def test_removed_classes_are_not_counted(self):
+        analytics = Analytics()
+        analytics.update([observation(1, "truck"), observation(2, "bicycle")], 1)
+        self.assertFalse(analytics.tracks)
+        self.assertNotIn("truck", analytics.report()["counts"])
+        self.assertNotIn("bicycle", analytics.report()["counts"])
 
     def test_frame_indices_must_increase(self):
         analytics = Analytics()

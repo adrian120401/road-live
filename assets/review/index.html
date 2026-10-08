@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer-when-downgrade">
+  <title>Urban Vision · Revisar recorrido</title>
+  <link rel="stylesheet" href="/assets/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/assets/review/review.css">
+  <script defer src="/assets/leaflet/leaflet.js"></script>
+  <script defer src="/assets/review/review.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="identity"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M8 25 12 3m8 22L16 3M14 7v4m0 5v5"/></svg><span>Urban Vision</span></div>
+    <div class="trip-title"><h1>Revisar recorrido</h1><span id="source-name">Cargando video…</span></div>
+    <div id="save-state" role="status" aria-live="polite">Cargando proyecto…</div>
+    <button id="export" class="primary" disabled>Exportar video 4K</button>
+  </header>
+  <main class="workspace">
+    <section class="map-pane" aria-label="Recorrido y ubicación de los pozos">
+      <div class="map-tools">
+        <div class="mode-switch" role="group" aria-label="Modo de edición">
+          <button id="route-mode" class="selected" aria-pressed="true">Dibujar recorrido</button>
+          <button id="pothole-mode" aria-pressed="false">Ubicar pozos</button>
+        </div>
+        <button id="fit-route" class="quiet">Ver recorrido</button>
+      </div>
+      <div id="map" aria-label="Mapa editable de Trinidad"></div>
+      <div id="map-hint" class="map-hint" role="status">Marcá el inicio y después cada esquina o giro. Terminá en el punto de llegada.</div>
+      <div id="tile-warning" class="tile-warning" role="status" hidden>No se pudieron cargar las calles. Podés seguir revisando; comprobá tu conexión para dibujar la ruta.</div>
+      <div class="route-strip">
+        <div><span class="route-dot"></span><strong id="route-summary">Sin recorrido</strong><span id="route-distance"></span></div>
+        <div class="route-actions"><button id="undo" disabled>Deshacer</button><button id="delete-point" disabled>Eliminar punto</button></div>
+      </div>
+    </section>
+    <aside class="review-pane" aria-label="Evidencias y revisión">
+      <div class="review-heading"><div><h2>Pozos detectados</h2><p id="review-summary">Cargando detecciones…</p></div><strong id="review-count">—</strong></div>
+      <label class="filter-label" for="event-filter">Mostrar</label>
+      <select id="event-filter"><option value="all">Todas las detecciones</option><option value="pending">Pendientes</option><option value="accepted">Ubicadas</option><option value="rejected">Descartadas</option></select>
+      <div id="events" class="event-list" aria-label="Lista de detecciones"></div>
+      <section id="evidence-panel" class="evidence-panel" hidden aria-labelledby="evidence-title">
+        <div class="evidence-heading"><h3 id="evidence-title">Pozo</h3><span id="evidence-time"></span></div>
+        <div id="evidence-meta"></div>
+        <a id="photo-link" target="_blank" rel="noopener"><img id="evidence-image" alt="Fotograma de evidencia del pozo seleccionado"></a>
+        <p id="photo-error" hidden>La foto no está disponible. Revisá el momento en el video.</p>
+        <button id="photo-detail" class="quiet">Ver foto completa</button>
+        <div class="review-actions"><button id="place" class="primary">Ubicar en el mapa</button><button id="reject">Descartar</button><button id="reset-event" class="quiet" hidden>Volver a pendiente</button></div>
+        <p id="position-label" class="position-label">Ubicación pendiente.</p>
+        <details id="video-details"><summary>Ver este momento en el video</summary><video id="preview" controls preload="none" playsinline muted></video></details>
+      </section>
+      <div id="empty-state" class="empty-state" hidden></div>
+      <div class="review-footer"><p>Las posiciones las marcás vos. El mapa no representa un registro GPS.</p><div id="export-status" role="status" aria-live="polite"></div><progress id="export-progress" max="1" value="0" hidden></progress><div id="downloads"></div><button id="retry-save" hidden>Reintentar guardado</button></div>
+    </aside>
+  </main>
+  <div id="error-banner" class="error-banner" role="alert" hidden></div>
+</body>
+</html>

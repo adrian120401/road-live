@@ -6,10 +6,10 @@ from pathlib import Path
 
 
 CLASSES = (
-    "person", "car", "motorcycle", "bicycle", "bus", "truck",
+    "person", "car", "motorcycle", "bus",
     "traffic light", "stop sign",
 )
-MOVING_CLASSES = frozenset(CLASSES[:6])
+MOVING_CLASSES = frozenset({"person", "car", "motorcycle", "bus"})
 # In the source video, yellow speed-bump signs were predicted as STOP at <= 0.61.
 # This gate is applied AFTER tracking, preserving low-score association candidates.
 CLASS_MIN_CONFIDENCE = {"stop sign": 0.65}
@@ -23,8 +23,7 @@ DISPLAY_NAMES = {
     "bus": "ÓMNIBUS", "truck": "CAMIÓN", "traffic light": "SEMÁFORO",
     "stop sign": "PARE", "pothole": "POZO", "crosswalk": "PASO PEATONAL",
 }
-HUD_COUNTS = (("AUTOS", "car"), ("PERSONAS", "person"),
-              ("MOTOS", "motorcycle"), ("BICICLETAS", "bicycle"))
+HUD_COUNTS = (("AUTOS", "car"), ("PERSONAS", "person"), ("MOTOS", "motorcycle"))
 
 
 @dataclass(frozen=True)
@@ -88,6 +87,8 @@ class RoadDamageConfig:
             raise ValueError("--road-conf must be at least 0.50 and at most 1.")
         if self.frame_interval < 1:
             raise ValueError("--road-interval must be at least 1.")
+        if self.image_size < 128 or self.image_size % 32:
+            raise ValueError("--road-size must be a multiple of 32 and at least 128.")
         if not 0 < self.iou_threshold <= 1:
             raise ValueError("Road NMS IoU must be greater than 0 and at most 1.")
         x1, y1, x2, y2 = self.roi

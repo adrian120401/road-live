@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from .analytics import Analytics
-from .config import DISPLAY_NAMES, HUD_COUNTS, MOVING_CLASSES, Detection, is_valid_road_detection
+from .config import CLASSES, DISPLAY_NAMES, HUD_COUNTS, MOVING_CLASSES, Detection, is_valid_road_detection
 
 if TYPE_CHECKING:
     from .config import RoadFrame
@@ -53,9 +53,11 @@ class FrameMetrics:
 
 
 class Renderer:
-    def __init__(self, width: int, height: int, display_confidence: float = 0.30) -> None:
+    def __init__(self, width: int, height: int, display_confidence: float = 0.30,
+                 analysis_label: str = "ANÁLISIS EN VIVO") -> None:
         self.width, self.height = width, height
         self.display_confidence = display_confidence
+        self.analysis_label = analysis_label
         self.scale = min(width / 464, height / 832)
         self.margin = self.px(14)
         self.header_bottom = self.margin + self.px(55)
@@ -96,7 +98,7 @@ class Renderer:
         self.footer_top = self.height - self.margin - self.px(
             119 + (30 if road is not None else 0) + (23 if infrastructure else 0))
         annotated = frame.copy()
-        active = [d for d in detections if d.track_id is not None and
+        active = [d for d in detections if d.class_name in CLASSES and d.track_id is not None and
                   (d.confidence >= self.display_confidence or d.class_name in {"traffic light","stop sign"})]
         self._trails(annotated, active, analytics)
         label_regions: list[tuple[int, int, int, int]] = []
@@ -291,7 +293,7 @@ class Renderer:
         self.panel(frame, (left, self.margin, right, self.header_bottom), 0.70)
         cv2.line(frame, (left, self.margin), (left + self.px(42), self.margin), ACCENT, self.px(2), AA)
         self.text(frame, "URBAN VISION", (inner, self.margin + self.px(24)), 0.62)
-        self.text(frame, "ANÁLISIS EN VIVO", (inner, self.margin + self.px(43)), 0.32, MUTED)
+        self.text(frame, self.analysis_label, (inner, self.margin + self.px(43)), 0.32, MUTED)
         status = f"{active_count:02d} ACTIVOS"
         status_w = self.text_size(status, 0.32)[0][0]
         self.text(frame, status, (right - self.px(12) - status_w, self.margin + self.px(43)), 0.32, ACCENT)

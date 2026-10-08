@@ -26,6 +26,7 @@ def parse_args(argv: list[str] | None = None) -> Config:
     parser.add_argument("--road-model", type=Path, default=RoadDamageConfig.model)
     parser.add_argument("--road-conf", type=float, default=.50, help="Mínimo obligatorio: 0.50")
     parser.add_argument("--road-interval", type=int, default=2)
+    parser.add_argument("--road-size", type=int, default=RoadDamageConfig.image_size)
     parser.add_argument("--road-roi", nargs=4, type=float, default=RoadDamageConfig.roi,
                         metavar=("LEFT","TOP","RIGHT","BOTTOM"))
     parser.add_argument("--debug-road", action="store_true")
@@ -66,7 +67,7 @@ def parse_args(argv: list[str] | None = None) -> Config:
                                           if area_points else RoadDamageConfig.road_area)
     road = RoadDamageConfig(enabled=args.pop("road_damage"),model=args.pop("road_model"),
         confidence=args.pop("road_conf"),frame_interval=args.pop("road_interval"),
-        roi=tuple(args.pop("road_roi")),debug=args.pop("debug_road"),
+        roi=tuple(args.pop("road_roi")),image_size=args.pop("road_size"),debug=args.pop("debug_road"),
         save_evidence=not args.pop("no_road_evidence"),collect_candidates=args.pop("collect_road_candidates"),
         road_area=road_area,road_area_min_overlap=args.pop("road_area_overlap"))
     location = LocationConfig(use_video_gps=args.pop("use_video_gps"),force_mock_route=args.pop("force_mock_route"),

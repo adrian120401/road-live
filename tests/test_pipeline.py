@@ -14,6 +14,7 @@ from src.config import Config, Detection, RoadDamageConfig, LocationConfig
 from src.main import process_video
 from src.road_damage import RoadAssociator, roi_pixels
 from src.tracker import InferenceStats
+from src.analysis_cache import read_cache
 
 
 class FixedTracker:
@@ -48,19 +49,19 @@ class FixedRoadDetector:
     def warmup(self, frame):
         pass
 
-    def update(self, frame, frame_number):
+    def update(self, frame, frame_number, timestamp=None):
         if (frame_number - 1) % self.config.frame_interval:
             return replace(self.last, inferred=False, observed=())
         self.stats.record(1, 0.001)
-        self.last = self.associator.update([Detection(None, "pothole", 0.9, (230, 450, 270, 480))], frame_number)
+        self.last = self.associator.update([Detection(None, "pothole", 0.9, (230, 450, 270, 480))], frame_number, timestamp)
         return replace(self.last, roi=self.roi)
 
 
 class FailingRoadDetector(FixedRoadDetector):
-    def update(self, frame, frame_number):
+    def update(self, frame, frame_number, timestamp=None):
         if frame_number == 3:
             raise RuntimeError("Injected road inference failure")
-        return super().update(frame, frame_number)
+        return super().update(frame, frame_number, timestamp)
 
 
 class PipelineTests(unittest.TestCase):
@@ -116,6 +117,25 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(report["resolution"],[232,416])
         self.assertEqual(sizes,[(416,232,3)]*3)
         self.assertEqual(self.decoded_frames(output),3)
+
+    def test_review_analysis_caches_all_frames_without_assigning_fake_locations(self):
+        output = self.root / "analysis.mp4"
+        cache = self.root / "observations.jsonl"
+        with patch("src.main.ObjectTracker", FixedTracker), patch("src.main.RoadDamageDetector", FixedRoadDetector):
+            report = process_video(self.road_config(output), trace_path=cache,
+                                   write_video=False, manual_location=True)
+        self.assertTrue(report["complete"])
+        self.assertFalse(output.exists())
+        self.assertFalse(report["video_written"])
+        self.assertEqual(report["location"]["source"], "manual_pending")
+        self.assertEqual(report["location"]["trajectory"], [])
+        rows = list(read_cache(cache))
+        self.assertEqual([row["frame"] for row in rows[1:]], [1, 2, 3])
+        self.assertEqual(rows[-1]["road"][0]["track_id"], 1)
+        event = json.loads(self.root.joinpath("analysis_events.json").read_text())["events"][0]
+        self.assertNotIn("latitude", event)
+        self.assertNotIn("longitude", event)
+        self.assertFalse(self.root.joinpath("analysis_map.html").exists())
 
     def road_config(self, output, **kwargs):
         weights = self.root / "model.pt"

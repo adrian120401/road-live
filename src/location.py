@@ -32,6 +32,15 @@ class LocationProvider(Protocol):
     def point_at(self, timestamp: float) -> RoutePoint: ...
 
 
+class PendingManualRoute:
+    """Offline review must never assign the mock corridor to real evidence."""
+    source = "manual_pending"
+    points = ()
+
+    def point_at(self, timestamp: float) -> RoutePoint:
+        raise ValueError("La ubicación debe marcarse manualmente en la revisión.")
+
+
 class VideoMetadataLocationProvider:
     source = "real"
 
